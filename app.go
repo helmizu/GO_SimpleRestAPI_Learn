@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers"
+
 	conf "SimpleRestAPI/config"
 	ctrllr "SimpleRestAPI/controllers"
 	model "SimpleRestAPI/models"
@@ -29,7 +31,7 @@ func AllUsersEndPoint(w http.ResponseWriter, r *http.Request) {
 // FindUserEndpoint use to GET a users by its ID
 func FindUserEndpoint(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	user, err := ctr.FindById(params["id"])
+	user, err := ctr.FindByID(params["id"])
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid user ID")
 		return
@@ -110,7 +112,12 @@ func main() {
 	r.HandleFunc("/users", CreateUserEndPoint).Methods("POST")
 	r.HandleFunc("/users/{id}", UpdateUserEndPoint).Methods("PUT")
 	r.HandleFunc("/users", DeleteUserEndPoint).Methods("DELETE")
-	if err := http.ListenAndServe(":3000", r); err != nil {
+
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Accept"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "OPTIONS"})
+
+	if err := http.ListenAndServe(":3000", handlers.CORS(originsOk, headersOk, methodsOk)(r)); err != nil {
 		log.Fatal(err)
 	}
 }
